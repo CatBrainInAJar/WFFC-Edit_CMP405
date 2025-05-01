@@ -305,11 +305,26 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_keyArray[msg->wParam] = false;
 		break;
 
+		//mouse stuff
 	case WM_MOUSEMOVE:
+		//update the mouse X and Y which will be sent thru to the Renderer.
+		m_toolInputCommands.mousePos_X = GET_X_LPARAM(msg->lParam);
+		m_toolInputCommands.mousePos_Y = GET_Y_LPARAM(msg->lParam);
 		break;
 
 	case WM_LBUTTONDOWN:	//mouse button down,  you will probably need to check when its up too
-		//set some flag for the mouse button in inputcommands
+		//set  flag for the mouse button in inputcommands
+		m_toolInputCommands.mouseLeftButton_Down = true;
+		break;
+
+	case WM_RBUTTONDOWN:	//mouse button down,  you will probably need to check when its up too
+		//set flag for the mouse button in inputcommands
+		m_toolInputCommands.mouseRightButton_Down = true;
+		break;
+		
+	case WM_MBUTTONDOWN:	//mouse button down,  you will probably need to check when its up too
+		//set flag for the mouse button in inputcommands
+		m_toolInputCommands.mouseMidButton_Down = true;
 		break;
 
 	}
@@ -348,6 +363,44 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.rotLeft = true;
 	}
 	else m_toolInputCommands.rotLeft = false;
+
+	if (m_keyArray['2'])//
+	{
+		m_toolInputCommands.rotUp = true;
+	}
+	else m_toolInputCommands.rotUp = false;
+	
+	if (m_keyArray['3'])//
+	{
+		m_toolInputCommands.rotDown = true;
+	}
+	else m_toolInputCommands.rotDown = false;
+
+	//mouse
+	if (WM_LBUTTONDOWN)//
+	{
+		m_toolInputCommands.mouseLeftButton_Down = true;
+	}
+	else m_toolInputCommands.mouseLeftButton_Down = false;
+	
+	if (WM_RBUTTONDOWN)//
+	{
+		m_toolInputCommands.mouseRightButton_Down = true;
+	}
+	else m_toolInputCommands.mouseRightButton_Down = false;
+
+	if (WM_MBUTTONDOWN)//
+	{
+		m_toolInputCommands.mouseMidButton_Down = true;
+	}
+	else m_toolInputCommands.mouseMidButton_Down = false;
+	
+	//if (WM_MOUSEMOVE)//
+	//{
+	//	m_toolInputCommands.mousePos_X = true;
+	//	m_toolInputCommands.mousePos_Y = true;
+	//}
+
 
 	//WASD
 }

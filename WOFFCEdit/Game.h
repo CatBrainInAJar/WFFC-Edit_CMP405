@@ -51,6 +51,12 @@ public:
 	void SaveDisplayChunk(ChunkObject *SceneChunk);	//saves geometry et al
 	void ClearDisplayList();
 
+	//
+
+	void Camera();
+
+
+
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
 #endif
