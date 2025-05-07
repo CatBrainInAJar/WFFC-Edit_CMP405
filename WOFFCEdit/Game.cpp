@@ -84,6 +84,10 @@ void Game::Initialize(HWND window, int width, int height)
     m_deviceResources->CreateWindowSizeDependentResources();
     CreateWindowSizeDependentResources();
 
+	GetClientRect(window, &m_ScreenDimensions);
+
+	//
+
 #ifdef DXTK_AUDIO
     // Create DirectXTK for Audio objects
     AUDIO_ENGINE_FLAGS eflags = AudioEngine_Default;
@@ -117,6 +121,7 @@ void Game::SetGridState(bool state)
 // Executes the basic game loop.
 void Game::Tick(InputCommands *Input)
 {
+	
 	//copy over the input commands so we have a local version to use elsewhere.
 	m_InputCommands = *Input;
     m_timer.Tick([&]()
@@ -143,52 +148,9 @@ void Game::Update(DX::StepTimer const& timer)
 	//TODO  any more complex than this, and the camera should be abstracted out to somewhere else
 	//camera motion is on a plane, so kill the 7 component of the look direction
 
-
 	Camera();
 
-	//Vector3 planarMotionVector = m_camLookDirection;
-	//planarMotionVector.y = 0.0;
-
-	//if (m_InputCommands.rotRight)
-	//{
-	//	m_camOrientation.y -= m_camRotRate;
-	//}
-	//if (m_InputCommands.rotLeft)
-	//{
-	//	m_camOrientation.y += m_camRotRate;
-	//}
-
-	////create look direction from Euler angles in m_camOrientation
-	//m_camLookDirection.x = sin((m_camOrientation.y)*3.1415 / 180);
-	//m_camLookDirection.z = cos((m_camOrientation.y)*3.1415 / 180);
-	//m_camLookDirection.Normalize();
-
-	////create right vector from look Direction
-	//m_camLookDirection.Cross(Vector3::UnitY, m_camRight);
-
-	////process input and update stuff
-	//if (m_InputCommands.forward)
-	//{	
-	//	m_camPosition += m_camLookDirection*m_movespeed;
-	//}
-	//if (m_InputCommands.back)
-	//{
-	//	m_camPosition -= m_camLookDirection*m_movespeed;
-	//}
-	//if (m_InputCommands.right)
-	//{
-	//	m_camPosition += m_camRight*m_movespeed;
-	//}
-	//if (m_InputCommands.left)
-	//{
-	//	m_camPosition -= m_camRight*m_movespeed;
-	//}
-
-	////update lookat point
-	//m_camLookAt = m_camPosition + m_camLookDirection;
-
-	//apply camera vectors
-    m_view = Matrix::CreateLookAt(m_camPosition, m_camLookAt, Vector3::UnitY);
+	//update w
 
     m_batchEffect->SetView(m_view);
     m_batchEffect->SetWorld(Matrix::Identity);
@@ -282,6 +244,10 @@ void Game::Render()
 
 	//Render the batch,  This is handled in the Display chunk becuase it has the potential to get complex
 	m_displayChunk.RenderBatch(m_deviceResources);
+
+
+
+
 
     m_deviceResources->Present();
 }
@@ -642,17 +608,46 @@ void Game::Camera()
 		m_camOrientation.x -= m_camRotRate;
 	}
 
-	//---Mouse
-	if (m_InputCommands.mouseRightButton_Down) {
+	////---Mouse
 
-
-	}
-
+	//arc ball
 	if (m_InputCommands.mouseMidButton_Down) {
 
+		// Calculate rot given the mouse movement.
+		//float xAngle = m_camOrientation.x + m_InputCommands.mousePos_Y * 3.1415 / 180;
+		float xAngle = m_camOrientation.x + m_InputCommands.mousePos_Y * 3.1415 / 180;
+		//float xAngle = m_camOrientation.x + m_InputCommands.mousePos_X * 3.1415 / 180;
+
+		float yAngle = m_camOrientation.y + m_InputCommands.mousePos_X * 3.1415 / 180;
+		//float yAngle = m_camOrientation.y + m_InputCommands.mousePos_Y * 3.1415 / 180;
+
+
+		// Get the homogenous position of the camera and pivot point
+		Vector4 position = Vector4(m_camPosition.x, m_camPosition.y, m_camPosition.z, 1);
+		Vector4 pivot = Vector4(m_camLookAt.x, m_camLookAt.y, m_camLookAt.z, 1);
+
+		// Rotate the camera around the pivot point on the first axis.
+		Matrix rotationMatrixX = Matrix::Identity;
+		rotationMatrixX *= Matrix::CreateRotationX(xAngle);
+		position = Vector4::Transform((position - pivot), rotationMatrixX) + pivot;
+
+
+		//Rotate the camera around the pivot point on the second axis.
+		Matrix rotationMatrixY = Matrix::Identity;
+		rotationMatrixY *= Matrix::CreateRotationY(yAngle);
+		Vector3 finalPosition = Vector3::Transform((Vector3(position.x, position.y, position.z) - Vector3(pivot.x, pivot.y, pivot.z)), rotationMatrixY) + pivot;
+
+		//m_view = Matrix::CreateLookAt(finalPosition, m_camLookAt, Vector3::UnitY);
+
+		xAngle = xAngle * 0.95;
+		yAngle = yAngle * 0.95;
+
+		m_camOrientation.x = xAngle;
+		m_camOrientation.y = yAngle;
+
+		m_camPosition == finalPosition;
 
 	}
-
 
 
 	//create look direction from Euler angles in m_camOrientation
@@ -664,15 +659,12 @@ void Game::Camera()
 	float placeholder_O = m_camOrientation.y;
 	float placeholder_T = m_camOrientation.x;// notsure
 
+
+	////create look direction from Euler angles in m_camOrientation
 	m_camLookDirection.x = cos((placeholder_O)*placeholder_r) * cos((placeholder_T)*placeholder_r);
 	m_camLookDirection.y = sin((placeholder_T)*placeholder_r);
 	m_camLookDirection.z = sin((placeholder_O)*placeholder_r) * cos((placeholder_T)*placeholder_r);
 	m_camLookDirection.Normalize();
-
-	////create look direction from Euler angles in m_camOrientation
-	//m_camLookDirection.x = sin((m_camOrientation.y) * 3.1415 / 180);
-	//m_camLookDirection.z = cos((m_camOrientation.y) * 3.1415 / 180);
-	//m_camLookDirection.Normalize();
 
 	//create right vector from look Direction
 	m_camLookDirection.Cross(Vector3::UnitY, m_camRight);
@@ -695,8 +687,262 @@ void Game::Camera()
 		m_camPosition -= m_camRight * m_movespeed;
 	}
 
+	//drag screen
+	if (m_InputCommands.mouseRightButton_Down) {
+
+
+		//Calculate the pos given the mouse movement.
+		float xDrag = m_camPosition.x + m_InputCommands.mousePos_X * 3.1415 / 180;
+		float yDrag = m_camPosition.y + m_InputCommands.mousePos_Y * 3.1415 / 180;
+	
+		//m_camPosition.x = xDrag * m_movespeed;
+		//m_camPosition.y = yDrag * -m_movespeed;
+
+		//m_camPosition.y = (yDrag * -m_movespeed) + m_camPosition.y;
+		m_camPosition.y = yDrag * m_movespeed;
+		m_camPosition.z = xDrag * m_movespeed; 
+
+		//m_camPosition.y = m_camPosition.y+(yDrag * m_movespeed)*0.4;
+		//m_camPosition.z = m_camPosition.x+(xDrag * m_movespeed)*0.4;
+
+		//if (m_InputCommands.mousePos_X > 2.5) {
+		//	m_camPosition.z += m_camRight.x * m_movespeed;
+		//	//m_camPosition.x += m_camRight.x * m_movespeed;
+		//}
+		//else{ 
+		//	m_camPosition.z -= m_camRight.x * m_movespeed; 
+		//	//m_camPosition.x -= m_camRight.x * m_movespeed; 
+		//}
+		//m_camPosition += m_camRight * m_movespeed;
+		//m_camPosition -= m_camRight * m_movespeed;
+
+	}
+
+	//snaping to pos
+	//
+
+
+
+
 	//update lookat point
 	m_camLookAt = m_camPosition + m_camLookDirection;
+
+	//apply camera vectors
+	m_view = Matrix::CreateLookAt(m_camPosition, m_camLookAt, Vector3::UnitY);
+
+
+}
+
+int Game::Selection() {
+
+	int selectedID = -1;
+	float pickedDistance = 0;
+	//DisplayObject* currentDisplaySelected = nullptr;
+
+	//setup near and far planes of frustum with mouse X and mouse y passed down from Toolmain. 
+		//they may look the same but note, the difference in Z
+	const XMVECTOR nearSource = XMVectorSet(m_InputCommands.mousePos_X, m_InputCommands.mousePos_Y, 0.0f, 1.0f);
+	const XMVECTOR farSource = XMVectorSet(m_InputCommands.mousePos_X, m_InputCommands.mousePos_Y, 1.0f, 1.0f);
+
+	//Loop through entire display list of objects and pick with each in turn. 
+	for (int i = 0; i < m_displayList.size(); i++)
+	{
+		//Get the scale factor and translation of the object
+		const XMVECTORF32 scale = { m_displayList[i].m_scale.x,		m_displayList[i].m_scale.y,		m_displayList[i].m_scale.z };
+		const XMVECTORF32 translate = { m_displayList[i].m_position.x,		m_displayList[i].m_position.y,	m_displayList[i].m_position.z };
+
+		//convert euler angles into a quaternion for the rotation of the object
+		XMVECTOR rotate = Quaternion::CreateFromYawPitchRoll(m_displayList[i].m_orientation.y * 3.1415 / 180, m_displayList[i].m_orientation.x * 3.1415 / 180,
+			m_displayList[i].m_orientation.z * 3.1415 / 180);
+
+		//create set the matrix of the selected object in the world based on the translation, scale and rotation.
+		XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, scale, g_XMZero, rotate, translate);
+
+		//Unproject the points on the near and far plane, with respect to the matrix we just created.
+		XMVECTOR nearPoint = XMVector3Unproject(nearSource, 0.0f, 0.0f, m_ScreenDimensions.right, m_ScreenDimensions.bottom, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
+
+		XMVECTOR farPoint = XMVector3Unproject(farSource, 0.0f, 0.0f, m_ScreenDimensions.right, m_ScreenDimensions.bottom, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
+
+		//turn the transformed points into our picking vector. 
+		XMVECTOR pickingVector = farPoint - nearPoint;
+		pickingVector = XMVector3Normalize(pickingVector);
+
+		//loop through mesh list for object
+		for (int y = 0; y < m_displayList[i].m_model.get()->meshes.size(); y++)
+		{
+			//checking for ray intersection
+			if (m_displayList[i].m_model.get()->meshes[y]->boundingBox.Intersects(nearPoint, pickingVector, pickedDistance))
+			{
+				//closestDistance = Vector3::Distance(m_displayList[i].m_position, nearPlane);
+				currentDisplaySelected = &m_displayList[i];
+				selectedID = i;
+			}
+		}
+	}
+
+	//Temporary to show that the object is selected
+
+	if (currentDisplaySelected) {
+
+		currentDisplaySelected->m_scale = Vector3(2, 2, 2);//add proper outline/highlight 
+
+
+		//if (currentDisplaySelected_b == false) {
+		//	currentDisplaySelected->m_scale = Vector3(5, 5, 5);//add proper outline/highlight 
+		//	currentDisplaySelected_b == true;
+		//}
+	
+		//if (currentDisplaySelected_b == true) {
+
+		//	currentDisplaySelected->m_scale= currentDisplaySelected->m_scale / Vector3(5, 5, 5);
+		//	currentDisplaySelected_b == false;
+		//}
+	
+	}
+	if (!currentDisplaySelected) { 
+
+		currentDisplaySelected->m_scale = currentDisplaySelected->m_scale / Vector3(5, 5, 5);
+
+
+		//if (currentDisplaySelected_b == false) {
+		//	currentDisplaySelected->m_scale = Vector3(5, 5, 5);//add proper outline/highlight 
+		//	currentDisplaySelected_b == true;
+		//}
+
+		//if (currentDisplaySelected_b == true) {
+
+		//	currentDisplaySelected->m_scale = currentDisplaySelected->m_scale / Vector3(5, 5, 5);
+		//	currentDisplaySelected_b == false;
+		//}
+
+		////currentDisplaySelected->m_scale = Vector3(0.5, 0.5, 0.5);
+		// 
+		// 
+		//return -1;
+	}
+
+
+	//if we got a hit.  return it.  
+	return selectedID;
+
+	///-----------------
+
+}
+
+
+void Game::editObj(){
+
+	currentDisplaySelected = nullptr;
+
+
+
+}
+
+
+void Game::TerrainHighlight()
+{
+	//reset highlighted
+	for (int i = 0; i < 128; i++)
+	{
+		for (int j = 0; j < 128; j++)
+		{
+			m_displayChunk.m_Highlight[i][j] = false;
+		}
+	}
+
+}
+
+
+
+void Game::editTerrain() {
+
+	//currentDisplaySelected = nullptr;
+
+	// point of intersection
+	Vector3 InterPoint;
+	bool bInter = false;
+
+	const XMVECTOR nearSource = XMVectorSet(m_InputCommands.mousePos_X, m_InputCommands.mousePos_Y, 0.0f, 1.0f);
+	const XMVECTOR farSource = XMVectorSet(m_InputCommands.mousePos_X, m_InputCommands.mousePos_Y, 1.0f, 1.0f);
+
+	//Unproject points o
+	const XMVECTOR nearPoint = XMVector3Unproject(nearSource, 0.0f, 0.0f, m_ScreenDimensions.right, m_ScreenDimensions.bottom, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, m_world);
+	const XMVECTOR farPoint = XMVector3Unproject(farSource, 0.0f, 0.0f, m_ScreenDimensions.right, m_ScreenDimensions.bottom, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, m_world);
+
+	const XMVECTOR rayCast = XMVector3Normalize(farPoint - nearPoint);
+
+	for (size_t i = 0; i < TERRAINRESOLUTION - 1; i++) {
+		if (bInter) {
+			break;
+		}
+
+		for (size_t j = 0; j < TERRAINRESOLUTION - 1; j++) {
+			//// store the points of the terrain chunk
+			XMVECTOR p1 = XMLoadFloat3(&m_displayChunk.m_terrainGeometry[i][j].position);
+			XMVECTOR p2 = XMLoadFloat3(&m_displayChunk.m_terrainGeometry[i][j + 1].position);
+			XMVECTOR p3 = XMLoadFloat3(&m_displayChunk.m_terrainGeometry[i + 1][j + 1].position);
+			XMVECTOR p4 = XMLoadFloat3(&m_displayChunk.m_terrainGeometry[i + 1][j].position);
+
+			// get points of the terrain chunk
+			XMVECTOR normal = XMVector3Normalize(XMVector3Cross(p2 - p1, p3 - p1));
+			float d = -XMVectorGetX(XMVector3Dot(normal, p1));
+			XMVECTOR plane = XMVectorSetW(normal, d);
+
+			// point of intersection
+			XMVECTOR intersect = XMPlaneIntersectLine(plane, nearPoint, farPoint);
+
+			if (!XMVector3Equal(intersect, XMVectorZero())) {
+				Vector3 point;
+				XMStoreFloat3(&point, intersect);
+
+				if (point.x >= std::min(XMVectorGetX(p1), XMVectorGetX(p2)) && point.x <= std::max(XMVectorGetX(p1), XMVectorGetX(p2)) &&
+					point.z >= std::min(XMVectorGetZ(p1), XMVectorGetZ(p4)) && point.z <= std::max(XMVectorGetZ(p1), XMVectorGetZ(p4)))
+				{
+					InterPoint = point;
+					bInter = true;
+					break;
+				}
+			}
+		}
+	}
+
+	if (!bInter) {
+		return;
+	}
+
+	for (int i = 0; i < TERRAINRESOLUTION; i++) {
+		for (int j = 0; j < TERRAINRESOLUTION; j++) {
+		
+			// Get the distance between the vertex + intersection // ignore the y axis
+			const float dist = Vector3::Distance(Vector3(InterPoint.x, 0, InterPoint.z),
+				Vector3(m_displayChunk.m_terrainGeometry[i][j].position.x,
+					0, m_displayChunk.m_terrainGeometry[i][j].position.z));
+			const int outRadius = m_InputCommands.outerBrushRadius;
+			const int inRadius = m_InputCommands.innerBrushRadius;
+
+
+			if (dist < outRadius) {
+				if (dist < inRadius) {
+					m_displayChunk.m_terrainGeometry[i][j].position.y += 0.25f * m_InputCommands.terrainMagnitude;
+				}
+				else {
+					m_displayChunk.m_terrainGeometry[i][j].position.y += 0.25f * m_InputCommands.terrainMagnitude * (1 - ((dist - inRadius) / 10.f));
+				}
+				// min the terrain 
+				if (m_displayChunk.m_terrainGeometry[i][j].position.y < -10) {
+					m_displayChunk.m_terrainGeometry[i][j].position.y = -10;
+				}
+				// max the terrain 
+				else if (m_displayChunk.m_terrainGeometry[i][j].position.y > 50) {
+					m_displayChunk.m_terrainGeometry[i][j].position.y = 50;
+				}
+
+				// recalculate normals
+				m_displayChunk.CalculateTerrainNormal_(i, j);///-
+
+			}
+		}
+	}
 
 
 

@@ -18,5 +18,17 @@ struct InputCommands
 	bool mouseLeftButton_Down;
 	bool mouseRightButton_Down;
 
+	float mouseDrag_X;//
+	float mouseDrag_Y;//
+
+	bool mouseDrag;
+
+	// Terrain
+	int terrainMagnitude;
+	float innerBrushRadius;
+	float outerBrushRadius;
+
+	bool EditModeON_terrain;
 
 };
+

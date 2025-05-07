@@ -54,7 +54,13 @@ public:
 	//
 
 	void Camera();
+	int Selection();
+	void Select();
+	void Unselect();
 
+	void editObj();
+	void editTerrain();
+	void TerrainHighlight();
 
 
 #ifdef DXTK_AUDIO
@@ -69,6 +75,9 @@ private:
 	void CreateWindowSizeDependentResources();
 
 	void XM_CALLCONV DrawGrid(DirectX::FXMVECTOR xAxis, DirectX::FXMVECTOR yAxis, DirectX::FXMVECTOR origin, size_t xdivs, size_t ydivs, DirectX::GXMVECTOR color);
+
+	//
+	bool currentDisplaySelected_b = false;
 
 	//tool specific
 	std::vector<DisplayObject>			m_displayList;
@@ -85,6 +94,21 @@ private:
 	DirectX::SimpleMath::Vector3		m_camLookDirection;
 	DirectX::SimpleMath::Vector3		m_camRight;
 	float m_camRotRate;
+
+	//
+	RECT		m_ScreenDimensions;
+
+	//
+	std::vector<SceneObject>    m_sceneGraph;	//our scenegraph storing all the objects in the current chunk
+	ChunkObject					m_chunk;		//our landscape chunk
+	int m_selectedObject;						//ID of current Selection
+
+	DisplayObject* currentDisplaySelected = nullptr;
+
+	int leftClick = 0;
+
+	//XMVECTOR p1, p2, p3, p4;
+
 
 	//control variables
 	bool m_grid;							//grid rendering on / off

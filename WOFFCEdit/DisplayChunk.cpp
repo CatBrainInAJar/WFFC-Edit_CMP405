@@ -18,6 +18,9 @@ DisplayChunk::DisplayChunk()
 
 DisplayChunk::~DisplayChunk()
 {
+	if (m_texture_diffuse) {
+		m_texture_diffuse = NULL;
+	}
 }
 
 void DisplayChunk::PopulateChunkData(ChunkObject * SceneChunk)
@@ -58,6 +61,8 @@ void DisplayChunk::RenderBatch(std::shared_ptr<DX::DeviceResources>  DevResource
 		}
 	}
 	m_batch->End();
+
+
 }
 
 void DisplayChunk::InitialiseBatch()
@@ -107,7 +112,8 @@ void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResour
 	fclose(pFile);
 
 	//load in texture diffuse
-	
+	if (m_texture_diffuse)	m_texture_diffuse->Release();
+
 	//load the diffuse texture
 	std::wstring texturewstr = StringToWCHART(m_tex_diffuse_path);
 	HRESULT rs;	
@@ -124,6 +130,7 @@ void DisplayChunk::LoadHeightMap(std::shared_ptr<DX::DeviceResources>  DevResour
 	size_t byteCodeLength;
 
 	m_terrainEffect->GetVertexShaderBytecode(&shaderByteCode, &byteCodeLength);
+	//m_highlightEffect->GetVertexShaderBytecode(&shaderByteCode, &byteCodeLength);
 
 	//setup batch
 	DX::ThrowIfFailed(
@@ -145,6 +152,7 @@ void DisplayChunk::SaveHeightMap()
 	{
 		m_heightMap[i] = 0;
 	}*/
+	GenerateHeightmap();
 
 	FILE *pFile = NULL;
 
@@ -165,7 +173,7 @@ void DisplayChunk::SaveHeightMap()
 
 void DisplayChunk::UpdateTerrain()
 {
-	//all this is doing is transferring the height from the heigtmap into the terrain geometry.
+	////all this is doing is transferring the height from the heigtmap into the terrain geometry.
 	int index;
 	for (size_t i = 0; i < TERRAINRESOLUTION; i++)
 	{
@@ -173,6 +181,7 @@ void DisplayChunk::UpdateTerrain()
 		{
 			index = (TERRAINRESOLUTION * i) + j;
 			m_terrainGeometry[i][j].position.y = (float)(m_heightMap[index])*m_terrainHeightScale;	
+			//CalculateTerrainNormal_(i,j);
 		}
 	}
 	CalculateTerrainNormals();
@@ -182,14 +191,64 @@ void DisplayChunk::UpdateTerrain()
 void DisplayChunk::GenerateHeightmap()
 {
 	//insert how YOU want to update the heigtmap here! :D
+	int index;
+	for (size_t i = 0; i < TERRAINRESOLUTION; i++)
+	{
+		for (size_t j = 0; j < TERRAINRESOLUTION; j++)
+		{
+			index = (TERRAINRESOLUTION * i) + j;
+			m_heightMap[index] = (float)(m_terrainGeometry[i][j].position.y / m_terrainHeightScale);
+		}
+	}
 }
 
+void DisplayChunk::CalculateTerrainNormal_(int i, int j) {
+
+	DirectX::SimpleMath::Vector3 upDownVector;
+	DirectX::SimpleMath::Vector3 leftRightVector;
+	DirectX::SimpleMath::Vector3 normalVector;
+
+	upDownVector.x = (m_terrainGeometry[i + 1][j].position.x - m_terrainGeometry[i - 1][j].position.x);
+	upDownVector.y = (m_terrainGeometry[i + 1][j].position.y - m_terrainGeometry[i - 1][j].position.y);
+	upDownVector.z = (m_terrainGeometry[i + 1][j].position.z - m_terrainGeometry[i - 1][j].position.z);
+
+	leftRightVector.x = (m_terrainGeometry[i][j - 1].position.x - m_terrainGeometry[i][j + 1].position.x);
+	leftRightVector.y = (m_terrainGeometry[i][j - 1].position.y - m_terrainGeometry[i][j + 1].position.y);
+	leftRightVector.z = (m_terrainGeometry[i][j - 1].position.z - m_terrainGeometry[i][j + 1].position.z);
+
+
+	leftRightVector.Cross(upDownVector, normalVector);	//get cross product
+	normalVector.Normalize();			//normalise it.
+
+	m_terrainGeometry[i][j].normal = normalVector;	//set the normal for this point based on our result
+	
+	//int index1, index2, index3, index4;
+	//DirectX::SimpleMath::Vector3 upDownVector, leftRightVector, normalVector;
+	//int index1, index2, index3, index4;
+	//DirectX::SimpleMath::Vector3 upDownVector, leftRightVector, normalVector;
+	//
+	//for ( i = 0; i < (TERRAINRESOLUTION - 1); i++)
+	//{
+	//	for ( j = 0; j < (TERRAINRESOLUTION - 1); j++)
+	//	{
+	//		upDownVector.x = (m_terrainGeometry[i + 1][j].position.x - m_terrainGeometry[i - 1][j].position.x);
+	//		upDownVector.y = (m_terrainGeometry[i + 1][j].position.y - m_terrainGeometry[i - 1][j].position.y);
+	//		upDownVector.z = (m_terrainGeometry[i + 1][j].position.z - m_terrainGeometry[i - 1][j].position.z);
+	//
+	//		leftRightVector.x = (m_terrainGeometry[i][j - 1].position.x - m_terrainGeometry[i][j + 1].position.x);
+	//		leftRightVector.y = (m_terrainGeometry[i][j - 1].position.y - m_terrainGeometry[i][j + 1].position.y);
+	//		leftRightVector.z = (m_terrainGeometry[i][j - 1].position.z - m_terrainGeometry[i][j + 1].position.z);
+	//
+	//		leftRightVector.Cross(upDownVector, normalVector);	//get cross product
+	//		normalVector.Normalize();			//normalise it.
+	//
+	//		m_terrainGeometry[i][j].normal = normalVector;	//set the normal for this point based on our result
+	//	}
+	//}
+}
 void DisplayChunk::CalculateTerrainNormals()
 {
-	int index1, index2, index3, index4;
 	DirectX::SimpleMath::Vector3 upDownVector, leftRightVector, normalVector;
-
-
 
 	for (int i = 0; i<(TERRAINRESOLUTION - 1); i++)
 	{
@@ -203,7 +262,6 @@ void DisplayChunk::CalculateTerrainNormals()
 			leftRightVector.y = (m_terrainGeometry[i][j - 1].position.y - m_terrainGeometry[i][j + 1].position.y);
 			leftRightVector.z = (m_terrainGeometry[i][j - 1].position.z - m_terrainGeometry[i][j + 1].position.z);
 
-
 			leftRightVector.Cross(upDownVector, normalVector);	//get cross product
 			normalVector.Normalize();			//normalise it.
 
@@ -211,3 +269,6 @@ void DisplayChunk::CalculateTerrainNormals()
 		}
 	}
 }
+
+
+

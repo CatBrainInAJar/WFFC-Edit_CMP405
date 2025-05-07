@@ -23,6 +23,8 @@ public: //methods
 	afx_msg	void	onActionSave();											//save the current chunk
 	afx_msg void	onActionSaveTerrain();									//save chunk geometry
 
+	void	TerrianInputUpdate();
+
 	void	Tick(MSG *msg);
 	void	UpdateInput(MSG *msg);
 
@@ -34,6 +36,7 @@ public:	//variables
 private:	//methods
 	void	onContentAdded();
 
+	int leftClick = 0;
 
 		
 private:	//variables
@@ -48,6 +51,12 @@ private:	//variables
 	int m_height;
 	int m_currentChunk;			//the current chunk of thedatabase that we are operating on.  Dictates loading and saving. 
 	
+	//bool TerrainSet1 =0;
+
+	bool TerrainSet1 =0;
+	bool TerrainSet2=0;
+	bool TerrainSet3=0;
+	bool TerrainSet4=0;
 
 	
 };

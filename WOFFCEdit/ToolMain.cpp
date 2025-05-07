@@ -19,6 +19,14 @@ ToolMain::ToolMain()
 	m_toolInputCommands.left		= false;
 	m_toolInputCommands.right		= false;
 	
+	m_toolInputCommands.mouseLeftButton_Down = false;
+	m_toolInputCommands.mouseRightButton_Down = false;
+	m_toolInputCommands.mouseMidButton_Down = false;
+	m_toolInputCommands.terrainMagnitude = 0.4;
+	m_toolInputCommands.EditModeON_terrain = false;
+	m_toolInputCommands.innerBrushRadius = 1;
+	m_toolInputCommands.outerBrushRadius = 8;
+
 }
 
 
@@ -279,6 +287,110 @@ void ToolMain::onActionSaveTerrain()
 
 void ToolMain::Tick(MSG *msg)
 {
+	//if terrian mode on
+
+	//if (m_toolInputCommands.EditModeON_terrain == 0) {
+
+	/*	if (m_toolInputCommands.mouseLeftButton_Down)
+		if (m_toolInputCommands.mouseLeftButton_Down)
+		{
+			m_d3dRenderer.Selection();
+		}*/
+
+	////}
+	//	m_toolInputCommands.EditModeON_terrain = 1;
+	//if (m_toolInputCommands.EditModeON_terrain == 1) {
+
+	//		TerrianInputUpdate();
+	//	
+	//}
+
+	TerrianInputUpdate();
+
+	//if (m_toolInputCommands.mouseLeftButton_Down)
+	//{
+	//	//if(leftClick == 0)
+	//	m_d3dRenderer.Selection();
+	//	//m_toolInputCommands.mouseLeftButton_Down = false;
+	//}
+
+	//====  
+
+	if (m_keyArray['['])//
+	{
+		if (TerrainSet1 == 0) {
+
+			TerrainSet1 = 1;
+		}
+
+		if (TerrainSet1 == 1) {
+
+			TerrainSet1 = 0;
+		}
+
+	}
+
+	if (m_keyArray[']'])//
+	{
+		if (TerrainSet2 == 0) {
+
+			TerrainSet2 = 1;
+		}
+
+		if (TerrainSet2 == 1) {
+
+			TerrainSet2 = 0;
+		}
+
+	}
+
+
+	if (m_keyArray['{'])//
+	{
+		if (TerrainSet3 == 0) {
+
+			TerrainSet3 = 1;
+		}
+
+		if (TerrainSet3 == 1) {
+
+			TerrainSet3 = 0;
+		}
+
+	}
+
+	if (m_keyArray['}'])//
+	{
+		if (TerrainSet4 == 0) {
+
+			TerrainSet4 = 1;
+		}
+
+		if (TerrainSet4 == 1) {
+
+			TerrainSet4 = 0;
+		}
+
+	}
+//
+//	if (m_keyArray['I'])//
+//	{
+//		if (m_toolInputCommands.EditModeON_terrain == 0) {
+//
+//			m_toolInputCommands.EditModeON_terrain = 1;
+//		}
+//
+//		if (m_toolInputCommands.EditModeON_terrain == 1) {
+//
+//			m_toolInputCommands.EditModeON_terrain = 0;
+//		}
+//
+//	}
+//
+////----------
+
+
+
 	//do we have a selection
 	//do we have a mode
 	//are we clicking / dragging /releasing
@@ -289,6 +401,10 @@ void ToolMain::Tick(MSG *msg)
 
 	//Renderer Update Call
 	m_d3dRenderer.Tick(&m_toolInputCommands);
+
+	//m_toolInputCommands.mouseLeftButton_Down = false;
+
+	//TerrianInputUpdate();
 }
 
 void ToolMain::UpdateInput(MSG * msg)
@@ -308,23 +424,52 @@ void ToolMain::UpdateInput(MSG * msg)
 		//mouse stuff
 	case WM_MOUSEMOVE:
 		//update the mouse X and Y which will be sent thru to the Renderer.
+		m_toolInputCommands.mouseDrag = true;
+
+		m_toolInputCommands.mouseDrag_X = GET_X_LPARAM(msg->lParam) - m_toolInputCommands.mousePos_X;
+		m_toolInputCommands.mouseDrag_Y = GET_Y_LPARAM(msg->lParam) - m_toolInputCommands.mousePos_Y;
+
 		m_toolInputCommands.mousePos_X = GET_X_LPARAM(msg->lParam);
 		m_toolInputCommands.mousePos_Y = GET_Y_LPARAM(msg->lParam);
 		break;
 
+		//left button
 	case WM_LBUTTONDOWN:	//mouse button down,  you will probably need to check when its up too
 		//set  flag for the mouse button in inputcommands
 		m_toolInputCommands.mouseLeftButton_Down = true;
 		break;
+	case WM_LBUTTONUP:	//mouse button down,  you will probably need to check when its up too
+		//set  flag for the mouse button in inputcommands
+		m_toolInputCommands.mouseLeftButton_Down = false;
+		break;
 
+
+		//right button
 	case WM_RBUTTONDOWN:	//mouse button down,  you will probably need to check when its up too
 		//set flag for the mouse button in inputcommands
 		m_toolInputCommands.mouseRightButton_Down = true;
 		break;
+	case WM_RBUTTONUP:	//mouse button down,  you will probably need to check when its up too
+		//set  flag for the mouse button in inputcommands
+		m_toolInputCommands.mouseRightButton_Down = false;
+		break;
 		
+		//mid button
 	case WM_MBUTTONDOWN:	//mouse button down,  you will probably need to check when its up too
 		//set flag for the mouse button in inputcommands
 		m_toolInputCommands.mouseMidButton_Down = true;
+		break;
+	case WM_MBUTTONUP:	//mouse button down,  you will probably need to check when its up too
+		//set  flag for the mouse button in inputcommands
+		m_toolInputCommands.mouseMidButton_Down = false;
+		break;
+
+
+	case WM_MOUSEWHEEL:	//mouse 
+		//if forward scroll
+		// m_toolInputCommands.wheelScroll = GET_WHEEL_DELTA_WPARAM(msg->wParam);
+		
+		//if back scroll
 		break;
 
 	}
@@ -375,32 +520,161 @@ void ToolMain::UpdateInput(MSG * msg)
 		m_toolInputCommands.rotDown = true;
 	}
 	else m_toolInputCommands.rotDown = false;
-
-	//mouse
-	if (WM_LBUTTONDOWN)//
-	{
-		m_toolInputCommands.mouseLeftButton_Down = true;
-	}
-	else m_toolInputCommands.mouseLeftButton_Down = false;
 	
-	if (WM_RBUTTONDOWN)//
-	{
-		m_toolInputCommands.mouseRightButton_Down = true;
-	}
-	else m_toolInputCommands.mouseRightButton_Down = false;
 
-	if (WM_MBUTTONDOWN)//
+	//----------
+
+	if (m_keyArray['C'])//
 	{
-		m_toolInputCommands.mouseMidButton_Down = true;
+
+		m_d3dRenderer.Selection();
+		//m_toolInputCommands.terrainMagnitude = -1;
 	}
-	else m_toolInputCommands.mouseMidButton_Down = false;
+	//else m_toolInputCommands.terrainMagnitude = 1;
+
+	//====  
+
+	if (m_keyArray['['])//
+	{
+		if (TerrainSet1 == 0) {
+
+			TerrainSet1 = 1;
+		}
+
+		if (TerrainSet1 == 1) {
+
+			TerrainSet1 = 0;
+		}
+
+		m_toolInputCommands.innerBrushRadius = 10;
+		m_toolInputCommands.outerBrushRadius = 20;
+		m_toolInputCommands.terrainMagnitude = 1;
+	}
 	
-	//if (WM_MOUSEMOVE)//
-	//{
-	//	m_toolInputCommands.mousePos_X = true;
-	//	m_toolInputCommands.mousePos_Y = true;
-	//}
+	if (m_keyArray[']'])//
+	{
+		if (TerrainSet2 == 0) {
+
+			TerrainSet2 = 1;
+		}
+
+		if (TerrainSet2 == 1) {
+
+			TerrainSet2 = 0;
+		}
+
+		m_toolInputCommands.innerBrushRadius = 10;
+		m_toolInputCommands.outerBrushRadius = 20;
+		m_toolInputCommands.terrainMagnitude = -1;
+	}
+	
+
+	if (m_keyArray['{'])//
+	{
+		if (TerrainSet3 == 0) {
+
+			TerrainSet3 = 1;
+		}
+
+		if (TerrainSet3 == 1) {
+
+			TerrainSet3 = 0;
+		}
+
+		m_toolInputCommands.innerBrushRadius = 5;
+		m_toolInputCommands.outerBrushRadius = 10;
+		m_toolInputCommands.terrainMagnitude = 0.5;
+	}
+	
+	if (m_keyArray['}'])//
+	{
+		if (TerrainSet4 == 0) {
+
+			TerrainSet4 = 1;
+		}
+
+		if (TerrainSet4 == 1) {
+
+			TerrainSet4 = 0;
+		}
+
+		m_toolInputCommands.innerBrushRadius = 5;
+		m_toolInputCommands.outerBrushRadius = 10;
+		m_toolInputCommands.terrainMagnitude = -0.5;
+	}
+
+	if (m_keyArray['I'])//
+	{
+		if (m_toolInputCommands.EditModeON_terrain == 0) {
+
+			m_toolInputCommands.EditModeON_terrain = 1;
+		}
+		
+		if (m_toolInputCommands.EditModeON_terrain == 1) {
+
+			m_toolInputCommands.EditModeON_terrain = 0;
+		}
+
+	}
+	
 
 
 	//WASD
 }
+
+
+void ToolMain::TerrianInputUpdate()
+{
+
+	if (m_toolInputCommands.mouseLeftButton_Down)
+	{
+		//if(leftClick == 0)
+
+		//m_toolInputCommands.terrainDir = 10;
+		//m_toolInputCommands.innerBrushRadius = 100;
+		//m_toolInputCommands.outerBrushRadius = 500;
+
+		m_toolInputCommands.innerBrushRadius = 10;
+		m_toolInputCommands.outerBrushRadius = 20;
+		m_toolInputCommands.terrainMagnitude = 1;
+
+		if (TerrainSet1==1)//
+		{
+			m_toolInputCommands.innerBrushRadius = 10;
+			m_toolInputCommands.outerBrushRadius = 20;
+			m_toolInputCommands.terrainMagnitude = 1;
+		}
+
+		if (TerrainSet2 == 1)
+		{
+			m_toolInputCommands.innerBrushRadius = 10;
+			m_toolInputCommands.outerBrushRadius = 20;
+			m_toolInputCommands.terrainMagnitude = -1;
+		}
+
+
+		if (TerrainSet3 == 1)
+		{
+			m_toolInputCommands.innerBrushRadius = 5;
+			m_toolInputCommands.outerBrushRadius = 10;
+			m_toolInputCommands.terrainMagnitude = 0.5;
+		}
+
+		if (TerrainSet4 == 1)
+		{
+			m_toolInputCommands.innerBrushRadius = 5;
+			m_toolInputCommands.outerBrushRadius = 10;
+			m_toolInputCommands.terrainMagnitude = -0.5;
+		}
+
+		if (m_toolInputCommands.mouseLeftButton_Down) {
+
+		}
+
+		m_d3dRenderer.editTerrain();
+		//m_toolInputCommands.mouseLeftButton_Down = false;
+	}
+
+	//TerrianInputUpdate();
+}
+
